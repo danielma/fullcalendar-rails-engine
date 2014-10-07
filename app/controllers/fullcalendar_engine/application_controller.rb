@@ -1,4 +1,2 @@
-module FullcalendarEngine
-  class ApplicationController < ActionController::Base
-  end
+class FullcalendarEngine::ApplicationController < ApplicationController
 end
