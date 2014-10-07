@@ -2,11 +2,15 @@ require_dependency 'fullcalendar_engine/application_controller'
 
 module FullcalendarEngine
   class EventsController < ApplicationController
+    before_action :set_subscriber_by_subdomain
+    before_action :user_required
 
     layout FullcalendarEngine::Configuration['layout'] || 'application'
 
     before_filter :load_event, only: [:edit, :update, :destroy, :move, :resize]
     before_filter :determine_event_type, only: :create
+
+    authorize_resource
 
     def create
       if @event.save
@@ -26,7 +30,7 @@ module FullcalendarEngine
       start_time = Time.at(params[:start].to_i).to_formatted_s(:db)
       end_time   = Time.at(params[:end].to_i).to_formatted_s(:db)
 
-      @events = Event.where('
+      @events = @subscriber.events.where('
                   (starttime >= :start_time and endtime <= :end_time) or
                   (starttime >= :start_time and endtime > :end_time and starttime <= :end_time) or
                   (starttime <= :start_time and endtime >= :start_time and endtime <= :end_time) or
@@ -100,7 +104,7 @@ module FullcalendarEngine
     private
 
     def load_event
-      @event = Event.where(:id => params[:id]).first
+      @event = @subscriber.events.where(:id => params[:id]).first
       unless @event
         render json: { message: "Event Not Found.."}, status: 404 and return
       end
@@ -112,9 +116,9 @@ module FullcalendarEngine
 
     def determine_event_type
       if params[:event][:period] == "Does not repeat"
-        @event = Event.new(event_params)
+        @event = @subscriber.events.build(event_params)
       else
-        @event = EventSeries.new(event_params)
+        @event = @subscriber.event_series.build(event_params)
       end
     end
 
